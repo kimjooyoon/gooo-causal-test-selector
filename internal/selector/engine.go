@@ -324,7 +324,7 @@ func finalClaims(report Report) (string, Claim) {
 		return DecisionRefuted, refutedClaim("VERIFICATION", "PROVE_ZERO_FALSE_NEGATIVES", "OBSERVED_FALSE_NEGATIVE", "RESTORE_SELECTION_GRAPH", []string{"summary"})
 	}
 	if decision != DecisionClosed {
-		return decision, unknownClaim("IMPROVEMENT", "COMPARE_EXACT_BEFORE_AFTER_PAIRS", "CASE_SET_NOT_CLOSED", "UNPROVEN_IMPROVEMENT", []string{"cases"})
+		return decision, unknownClaim("IMPROVEMENT", "COMPARE_EXACT_BEFORE_AFTER_PAIRS", "CASE_SET_NOT_CLOSED", "INCOMPLETE_CASE_SET", "UNPROVEN_IMPROVEMENT", []string{"cases"})
 	}
 	if report.Summary.SelectedTests < report.Summary.FullSuiteTests {
 		return decision, Claim{State: decision, Stage: "IMPROVEMENT", Step: "COMPARE_EXACT_BEFORE_AFTER_PAIRS", Reason: "EXACT_PAIR_WITH_ZERO_FALSE_NEGATIVES", NextOperation: "NONE", BlockedBy: []string{}}
