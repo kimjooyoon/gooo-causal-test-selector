@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.27.x'
-          cache: true
+          cache: false
       - name: Build, test, and publish immutable evidence
         shell: bash
         env:
@@ -30,8 +30,13 @@ jobs:
             v[0-9]*.[0-9]*.[0-9]*) ;;
             *) echo "unsupported release tag: ${GITHUB_REF_NAME}"; exit 1 ;;
           esac
-          test "$(git cat-file -t "${GITHUB_REF_NAME}")" = "tag"
-          test "$(git rev-parse "${GITHUB_REF_NAME}^{}")" = "${GITHUB_SHA}"
+          tag_object=$(git rev-parse "refs/tags/${GITHUB_REF_NAME}")
+          tag_type=$(git cat-file -t "$tag_object")
+          tag_target=$(git rev-parse "${GITHUB_REF_NAME}^{}")
+          printf 'release_tag=%s\ntag_object=%s\ntag_type=%s\ntag_target=%s\ngithub_sha=%s\n' \
+            "${GITHUB_REF_NAME}" "$tag_object" "$tag_type" "$tag_target" "$GITHUB_SHA"
+          test "$tag_type" = "tag"
+          test "$tag_target" = "${GITHUB_SHA}"
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             echo "release already exists; refusing to replace immutable release"
             exit 1
