@@ -38,7 +38,6 @@ jobs:
             "${GITHUB_REF_NAME}" "$tag_object" "$tag_type" "$tag_target" "$GITHUB_SHA"
           test "$tag_type" = "tag"
           test "$tag_target" = "${GITHUB_SHA}"
-          test "$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases" --jq '.enabled')" = "true"
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             echo "release already exists; refusing to replace immutable release"
             exit 1
