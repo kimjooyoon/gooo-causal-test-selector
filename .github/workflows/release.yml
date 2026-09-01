@@ -30,9 +30,10 @@ jobs:
             v[0-9]*.[0-9]*.[0-9]*) ;;
             *) echo "unsupported release tag: ${GITHUB_REF_NAME}"; exit 1 ;;
           esac
-          tag_object=$(git rev-parse "refs/tags/${GITHUB_REF_NAME}")
-          tag_type=$(git cat-file -t "$tag_object")
-          tag_target=$(git rev-parse "${GITHUB_REF_NAME}^{}")
+          tag_ref=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}")
+          tag_object=$(printf '%s' "$tag_ref" | jq -r '.object.sha')
+          tag_type=$(printf '%s' "$tag_ref" | jq -r '.object.type')
+          tag_target=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object}" --jq '.object.sha')
           printf 'release_tag=%s\ntag_object=%s\ntag_type=%s\ntag_target=%s\ngithub_sha=%s\n' \
             "${GITHUB_REF_NAME}" "$tag_object" "$tag_type" "$tag_target" "$GITHUB_SHA"
           test "$tag_type" = "tag"
@@ -59,7 +60,7 @@ jobs:
             "release:${GITHUB_SHA}"
           printf 'release_tag=%s\ntarget_commit=%s\nannotated_tag_object=%s\nbuild_ms=%s\ntest_ms=%s\n' \
             "${GITHUB_REF_NAME}" "${GITHUB_SHA}" \
-            "$(git rev-parse "${GITHUB_REF_NAME}^{tag}")" "$build_ms" "$test_ms" \
+            "$tag_object" "$build_ms" "$test_ms" \
             > "$evidence_dir/release-metadata.txt"
           tar -C "$evidence_dir" -czf "${RUNNER_TEMP}/evidence-${GITHUB_REF_NAME}.tar.gz" .
           sha256sum "${RUNNER_TEMP}/evidence-${GITHUB_REF_NAME}.tar.gz" > "${RUNNER_TEMP}/evidence-${GITHUB_REF_NAME}.tar.gz.sha256"
