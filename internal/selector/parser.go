@@ -167,6 +167,9 @@ func ValidateIR(ir IR) error {
 	if ir.Graph.Schema != GraphSchema {
 		return fmt.Errorf("invalid semantic graph schema")
 	}
+	if ir.Authority != (Authority{}) || ir.Policy.MissingEdge != DecisionUnknown || ir.Policy.StaleEdge != DecisionRefuted || !ir.Policy.FullFallback || ir.Policy.CacheClose || ir.Policy.SemanticSource != "GOOO" {
+		return fmt.Errorf("semantic IR relaxes the fail-closed policy")
+	}
 	if err := validateGraphAndCases(Source{
 		Nodes: ir.Graph.Nodes, Edges: ir.Graph.Edges, Witnesses: ir.Graph.Witnesses,
 		Cases: ir.Cases,

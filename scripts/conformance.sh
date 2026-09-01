@@ -26,5 +26,5 @@ jq -e '
   .summary.observed_false_negatives == 0 and
   .summary.replay_comparisons == 1 and
   .summary.replay_mismatches == 0 and
-  ([.cases[] | select(.decision == "CLOSED" and .pair.false_negative != 0)] | length) == 0
+  (([.cases[] | select((.decision == "CLOSED") and ((.pair.false_negative // 0) != 0))] | length) == 0)
 ' "$output_dir/report.json" >/dev/null

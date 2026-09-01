@@ -87,3 +87,30 @@ func TestUnknownTupleRequiresAllSixFields(t *testing.T) {
 		t.Fatal("nil blocked_by must not close UNKNOWN")
 	}
 }
+
+func TestIRCannotRelaxPolicy(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := LoadSource(filepath.Join(root, "examples", "causal-test-selector", "main.gooo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	contract, err := LoadContract(filepath.Join(root, "contracts", "causal-test-selector-denominator-v1.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ir, err := Lower(source, contract)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ir.Policy.CacheClose = true
+	ir.IRDigest, err = unsignedIRDigest(ir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateIR(ir); err == nil {
+		t.Fatal("relaxed cache policy must not validate")
+	}
+}
