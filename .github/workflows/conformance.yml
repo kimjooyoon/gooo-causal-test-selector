@@ -1,0 +1,82 @@
+name: conformance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out immutable revision
+        uses: actions/checkout@v4
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache: true
+      - name: Verify clean input boundary
+        run: test -z "$(git status --porcelain)"
+      - name: Build, test, vet, and format
+        id: go_checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_started=$(date +%s%3N)
+          go build ./...
+          build_ms=$(( $(date +%s%3N) - build_started ))
+          test_started=$(date +%s%3N)
+          go test ./...
+          test_ms=$(( $(date +%s%3N) - test_started ))
+          go vet ./...
+          go_files=$(git ls-files '*.go')
+          test -z "$(gofmt -d ${go_files})"
+          echo "build_ms=${build_ms}" >> "$GITHUB_OUTPUT"
+          echo "test_ms=${test_ms}" >> "$GITHUB_OUTPUT"
+      - name: Lower authoritative .gooo source
+        run: |
+          set -euo pipefail
+          compile_dir="${RUNNER_TEMP}/gooo-causal-test-selector-compile"
+          mkdir -p "$compile_dir"
+          go run ./cmd/gooo-causal-test-selector compile \
+            --root "$GITHUB_WORKSPACE" \
+            --source "$GITHUB_WORKSPACE/examples/causal-test-selector/main.gooo" \
+            --contract "$GITHUB_WORKSPACE/contracts/causal-test-selector-denominator-v1.json" \
+            --output-ir "$compile_dir/semantic-ir.json"
+      - name: Execute fixed causal conformance
+        id: conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          output_dir="${RUNNER_TEMP}/gooo-causal-test-selector-conformance"
+          mkdir -p "$output_dir"
+          ./scripts/conformance.sh \
+            "$GITHUB_WORKSPACE" \
+            "$GITHUB_WORKSPACE/examples/causal-test-selector/main.gooo" \
+            "$GITHUB_WORKSPACE/contracts/causal-test-selector-denominator-v1.json" \
+            "$output_dir" \
+            "${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}"
+          jq -S -n \
+            --argjson build_ms "${{ steps.go_checks.outputs.build_ms }}" \
+            --argjson test_ms "${{ steps.go_checks.outputs.test_ms }}" \
+            --slurpfile report "$output_dir/report.json" \
+            '{schema:"gooo/causal-test-selector/ci-runtime/v1",build_ms:$build_ms,test_ms:$test_ms,report_metrics:$report[0].metrics,summary:$report[0].summary}' \
+            > "$output_dir/ci-runtime.json"
+          cat "$output_dir/ci-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          printf '\nbuild_ms=%s\ntest_ms=%s\n' \
+            "${{ steps.go_checks.outputs.build_ms }}" \
+            "${{ steps.go_checks.outputs.test_ms }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify no input repository writes
+        if: always()
+        run: test -z "$(git status --porcelain)"
+      - name: Upload exact conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-causal-test-selector-conformance
+          path: ${{ runner.temp }}/gooo-causal-test-selector-conformance
+          if-no-files-found: warn

@@ -1,0 +1,28 @@
+gooo causal_test_selector v1
+denominator id=gooo.causal-test-selector.fixed.v1 case_count=6
+authority repository_writes=0 local_test_executions=0 external_required_gates=0
+precedence REFUTED>UNKNOWN>CLOSED
+unknown_fields stage,step,reason,unknown_class,next_operation,blocked_by
+policy missing_edge=UNKNOWN stale_edge=REFUTED full_fallback=true cache_close=false semantic_source=GOOO
+
+node id=price.base kind=VALUE
+node id=tax.rate kind=VALUE
+node id=cart.total kind=DERIVATION
+node id=cart.summary kind=OUTCOME
+node id=invoice.total kind=DERIVATION
+
+edge id=price-base-cart-total from=price.base to=cart.total kind=DATA status=ACTIVE provenance=price.base
+edge id=tax-rate-cart-total from=tax.rate to=cart.total kind=DATA status=ACTIVE provenance=tax.rate
+edge id=tax-rate-invoice-total from=tax.rate to=invoice.total kind=DATA status=ACTIVE provenance=tax.rate
+edge id=cart-total-cart-summary from=cart.total to=cart.summary kind=DATA status=ACTIVE provenance=cart.total
+
+witness id=w-cart-total test_id=test-cart-total targets=cart.total command=ci:test-cart-total provenance=cart.total
+witness id=w-cart-summary test_id=test-cart-summary targets=cart.summary command=ci:test-cart-summary provenance=cart.summary
+witness id=w-invoice-total test_id=test-invoice-total targets=invoice.total command=ci:test-invoice-total provenance=invoice.total
+
+case ordinal=1 id=leaf-change kind=LEAF_CHANGE changed=cart.total expected=CLOSED fault_test=test-cart-total terminal_reason=ASSERTION_CONTRACT_MISMATCH effect=cart.total_rejected edge_fault=none fault_edge=none replay=false
+case ordinal=2 id=shared-dependency kind=SHARED_DEPENDENCY changed=tax.rate expected=CLOSED fault_test=test-invoice-total terminal_reason=ASSERTION_CONTRACT_MISMATCH effect=invoice.total_rejected edge_fault=none fault_edge=none replay=false
+case ordinal=3 id=comment-only kind=COMMENT_ONLY changed=- expected=CLOSED fault_test=none terminal_reason=NO_SEMANTIC_EFFECT effect=none edge_fault=none fault_edge=none replay=false
+case ordinal=4 id=missing-edge kind=MISSING_EDGE changed=tax.rate expected=UNKNOWN fault_test=test-invoice-total terminal_reason=ASSERTION_CONTRACT_MISMATCH effect=invoice.total_rejected edge_fault=MISSING fault_edge=tax-rate-invoice-total replay=false
+case ordinal=5 id=stale-edge kind=STALE_EDGE changed=tax.rate expected=REFUTED fault_test=test-invoice-total terminal_reason=ASSERTION_CONTRACT_MISMATCH effect=invoice.total_rejected edge_fault=STALE fault_edge=tax-rate-invoice-total replay=false
+case ordinal=6 id=replay kind=REPLAY changed=cart.total expected=CLOSED fault_test=test-cart-total terminal_reason=ASSERTION_CONTRACT_MISMATCH effect=cart.total_rejected edge_fault=none fault_edge=none replay=true

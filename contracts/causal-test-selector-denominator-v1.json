@@ -1,0 +1,21 @@
+{
+  "schema": "gooo/causal-test-selector/denominator/v1",
+  "version": "v1",
+  "id": "gooo.causal-test-selector.fixed.v1",
+  "fixed": true,
+  "case_count": 6,
+  "cases": [
+    {"ordinal": 1, "id": "leaf-change", "kind": "LEAF_CHANGE", "expected": "CLOSED"},
+    {"ordinal": 2, "id": "shared-dependency", "kind": "SHARED_DEPENDENCY", "expected": "CLOSED"},
+    {"ordinal": 3, "id": "comment-only", "kind": "COMMENT_ONLY", "expected": "CLOSED"},
+    {"ordinal": 4, "id": "missing-edge", "kind": "MISSING_EDGE", "expected": "UNKNOWN"},
+    {"ordinal": 5, "id": "stale-edge", "kind": "STALE_EDGE", "expected": "REFUTED"},
+    {"ordinal": 6, "id": "replay", "kind": "REPLAY", "expected": "CLOSED"}
+  ],
+  "required_metrics": [
+    "go_files", "gooo_files", "go_physical_lines", "gooo_physical_lines",
+    "descendant_dirs", "regular_files", "generated_files", "generated_bytes",
+    "wall_ms", "peak_rss_kib", "tests_total", "tests_selected", "tests_executed",
+    "tests_reused", "tests_failed", "tests_unknown", "repository_writes"
+  ]
+}
