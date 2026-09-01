@@ -157,7 +157,7 @@ func evaluateCase(source Source, ir IR, index graphIndex, caseDecl Case, runID s
 		selection = refutedClaim("SELECTION", "VERIFY_PROVENANCE_EDGE", "STALE_PROVENANCE_EDGE", "REPAIR_GOOO_EDGE", []string{caseDecl.FaultEdge})
 		fallback = true
 	}
-	selected := append([]string(nil), candidate...)
+	selected := append([]string{}, candidate...)
 	if fallback {
 		selected = allTestIDs(index.Witnesses)
 	}
