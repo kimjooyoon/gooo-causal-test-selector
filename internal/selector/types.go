@@ -278,7 +278,8 @@ type ExecutionReceipt struct {
 }
 
 func sortedCopy(values []string) []string {
-	result := append([]string(nil), values...)
+	result := make([]string, len(values))
+	copy(result, values)
 	sort.Strings(result)
 	return result
 }
